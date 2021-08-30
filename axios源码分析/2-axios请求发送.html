@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>请求发送过程</title>
+    <script src="./axios/dist/axios.js"></script>
+</head>
+
+<body>
+    <script>
+        //1. 声明构造函数
+        function Axios(config) {
+            this.config = config;
+        }
+        Axios.prototype.request = function (config) {
+            let promise = Promise.resolve(config);
+            let chains = [dispatchRequest, undefined]; // undefined 占位
+            let result = promise.then(chains[0], chains[1]);
+            return result;
+        }
+
+        //2. dispatchRequest 函数
+        function dispatchRequest(config) {
+            return xhrAdapter(config).then(response => {
+                return response;
+            }, error => {
+                throw error;
+            });
+        }
+
+        //3. adapter 适配器
+        function xhrAdapter(config) {
+            return new Promise((resolve, reject) => {
+                let xhr = new XMLHttpRequest();
+                xhr.open(config.method, config.url);
+                xhr.send();
+                xhr.onreadystatechange = function () {
+                    if (xhr.readyState === 4) {
+                        if (xhr.status >= 200 && xhr.status < 300) {
+                            resolve({
+                                config: config,//配置对象
+                                data: xhr.response,
+                                headers: xhr.getAllResponseHeaders(), //字符串  parseHeaders
+                                request: xhr,
+                                status: xhr.status,
+                                statusText: xhr.statusText
+                            });
+                        } else {//失败的状态
+                            reject(new Error('请求失败 失败的状态码为' + xhr.status));
+                        }
+                    }
+                }
+            });
+        }
+
+
+        //4. 创建 axios 函数
+        // let axios = Axios.prototype.request.bind(null);
+        axios({ method: 'get', url: 'http://localhost:3000/posts', responseType: 'Blob'})
+            .then(response => {
+                console.log(response);
+            });
+    </script>
+</body>
+
+</html>
